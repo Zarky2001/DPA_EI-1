@@ -2,9 +2,9 @@ import os
 import time
 import argparse
 import random
-from CIFAR_10_100.data_utils import *
-from CIFAR_10_100.resnet import *
-from CIFAR_10_100.loss import *
+from data_utils import *
+from resnet import *
+from loss import *
 import datetime
 
 start_time = time.time()
@@ -105,19 +105,11 @@ test_loader = torch.utils.data.DataLoader(
 
 best_prec1 = 0
 
-# beta 是一个衰减因子
-# img_num_list 是每个类别的样本数量列表
 beta = 0.9999
-# 计算了每个类别的有效样本数量
 effective_num = 1.0 - np.power(beta, img_num_list)
-# 计算了每个类别的权重
 per_cls_weights = (1.0 - beta) / np.array(effective_num)
-# 通过将权重标准化为总和为类别数量的值，得到了标准化后的权重。
 per_cls_weights = per_cls_weights / np.sum(per_cls_weights) * len(img_num_list)
-# 将权重转换为 PyTorch 张量，并将其移动到 GPU 上，以便在训练过程中使用。
 per_cls_weights = torch.FloatTensor(per_cls_weights).cuda()
-# weights 是一个包含了每个类别权重的 PyTorch 张量。
-# weights = torch.tensor(per_cls_weights).float()
 weights = (per_cls_weights.clone().detach()).float()
 
 
@@ -125,7 +117,6 @@ def main():
     global args, best_prec1
     args = parser.parse_args()
 
-    # 建立了一个ResNet32
     model = build_model()
 
     optimizer_a = torch.optim.SGD(model.params(), args.lr,
@@ -151,7 +142,7 @@ def main():
         is_best = prec1 > best_prec1
         best_prec1 = max(prec1, best_prec1)
         print('cur best acc:{}'.format(best_prec1))
-        # 保存节点
+
         save_checkpoint(args, {
             'epoch': epoch + 1,
             'state_dict': model.state_dict(),
@@ -176,7 +167,7 @@ def train(train_loader, model, optimizer_a, epoch):
         target = torch.tensor(target, dtype=torch.long)
         target = target.cuda()
 
-        # mixup
+
         input_var, target_a, target_b, lam = mixup_data(input, target)
         input_var, target_a, target_b = input_var.cuda(), target_a.cuda(), target_b.cuda()
 
@@ -184,7 +175,7 @@ def train(train_loader, model, optimizer_a, epoch):
 
         features, y_f = model(input_var, epoch)
 
-        # Add
+
         l_f = mixup_criterion(y_f, target_a, target_b, lam)
 
         prec_train = accuracy(y_f.data, target_var.data, topk=(1,))[0]
@@ -196,23 +187,6 @@ def train(train_loader, model, optimizer_a, epoch):
         l_f.backward()
         optimizer_a.step()
 
-        # target = torch.tensor(target, dtype=torch.long)
-        # target = target.cuda()
-        #
-        # input_var = to_var(input, requires_grad=False)
-        # target_var = to_var(target, requires_grad=False)
-        #
-        # features, y_f = model(input_var, epoch)
-        # cost_w = F.cross_entropy(y_f, target_var, reduce=False)
-        # l_f = torch.mean(cost_w)
-        # prec_train = accuracy(y_f.data, target_var.data, topk=(1,))[0]
-        #
-        # losses.update(l_f.item(), input.size(0))
-        # top1.update(prec_train.item(), input.size(0))
-        #
-        # optimizer_a.zero_grad()
-        # l_f.backward()
-        # optimizer_a.step()
         if i % args.print_freq == 0:
             print("--------------------------------Train------------------------------------")
             print('Epoch: [{0}]\t'
@@ -262,7 +236,6 @@ def train_IDASAug(train_loader, validation_loader, model, optimizer_a, epoch, cr
         del grad_cv, grads
 
         # main
-        # model.train()
         features, predicts = model(input_var, epoch)
         cls_loss = criterion(model.linear, features, predicts, target_var, ratio, weights,
                              new_cv, epoch, "update")
@@ -293,7 +266,6 @@ def validate(val_loader, model, criterion, epoch):
 
     model.eval()
 
-    # Add
     class_correct = [0] * 100
     class_total = [0] * 100
 
@@ -319,12 +291,10 @@ def validate(val_loader, model, criterion, epoch):
         prec1 = accuracy(output.data, target, topk=(1,))[0]
         top1.update(prec1.item(), input.size(0))
 
-        # Add
         corrects = np.array(preds_output) == np.array(target_var.data.cpu().numpy())
         for i in range(len(target)):
             class_total[target[i]] += 1
             class_correct[target[i]] += corrects[i]
-        # end Add
 
         batch_time.update(time.time() - end)
         end = time.time()
@@ -344,7 +314,6 @@ def validate(val_loader, model, criterion, epoch):
     # Add
     for i in range(100):
         class_acc = class_correct[i] / class_total[i] if class_total[i] > 0 else 0
-        # print("Accuracy for class {}:{:.3f}%".format(i, class_acc * 100))
     print("---------------------------End Test--------------------------")
 
 
@@ -353,7 +322,6 @@ def validate(val_loader, model, criterion, epoch):
 
 def build_model():
     model = ResNet32(args.dataset == 'cifar10' and 10 or 100)
-    # model = ResNet32(num_classes=(10 if args.dataset == 'cifar10' else 100), use_modulated_att=True)
 
     if torch.cuda.is_available():
         model.cuda()

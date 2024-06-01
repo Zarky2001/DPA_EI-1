@@ -39,14 +39,12 @@ def build_dataset(dataset,num_meta):
     ])
 
     if dataset == 'cifar10':
-        # My code is located in the parent directory of the root directory.
         train_dataset = torchvision.datasets.CIFAR10(root='/home/zy/ins_zy/cifar-10', train=True, download=True, transform=transform_train)
         test_dataset = torchvision.datasets.CIFAR10('/home/zy/ins_zy/cifar-10', train=False, transform=transform_test)
         img_num_list = [num_meta] * 10
         num_classes = 10
 
     if dataset == 'cifar100':
-        # My code is located in the parent directory of the root directory.
         train_dataset = torchvision.datasets.CIFAR100(root='/home/zy/ins_zy/cifar-100', train=True, download=True, transform=transform_train)
         test_dataset = torchvision.datasets.CIFAR100('/home/zy/ins_zy/cifar-100', train=False, transform=transform_test)
         img_num_list = [num_meta] * 100

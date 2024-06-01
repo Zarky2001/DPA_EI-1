@@ -1,7 +1,7 @@
 import time
 import argparse
-from CIFAR_10_100.data_utils import *
-from CIFAR_10_100.resnet import *
+from data_utils import *
+from resnet import *
 
 parser = argparse.ArgumentParser(description='Imbalanced Example')
 parser.add_argument('--checkpoint_path', default='', type=str,

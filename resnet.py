@@ -1,20 +1,13 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
 from torch.autograd import Variable
 import torch.nn.init as init
 import warnings
 
-# from CIFAR_10_100.ModulatedAttLayer import ModulatedAttLayer
-
 warnings.filterwarnings('ignore')
 
-
-# 定义了一个基类MetaModule，它是所有其他模块的父类。
-# MetaModule提供了一些用于处理参数和更新参数的方法。
 class MetaModule(nn.Module):
-    # adopted from: Adrien Ecoffet https://github.com/AdrienLE
     def params(self):
         for name, param in self.named_params(self):
             yield param
@@ -90,7 +83,6 @@ class MetaModule(nn.Module):
             self.set_param(name, param)
 
 
-# 线性层:继承自MetaModule类，并重写了前向传播方法。
 class MetaLinear(MetaModule):
     def __init__(self, *args, **kwargs):
         super().__init__()
@@ -106,7 +98,6 @@ class MetaLinear(MetaModule):
         return [('weight', self.weight), ('bias', self.bias)]
 
 
-# 归一化线性层:继承自MetaModule类，并重写了前向传播方法。
 class MetaLinear_Norm(MetaModule):
     def __init__(self, *args, **kwargs):
         super().__init__()
@@ -123,7 +114,6 @@ class MetaLinear_Norm(MetaModule):
         return [('weight', self.weight)]
 
 
-# 卷积层:继承自MetaModule类，并重写了前向传播方法。
 class MetaConv2d(MetaModule):
     def __init__(self, *args, **kwargs):
         super().__init__()
@@ -151,7 +141,6 @@ class MetaConv2d(MetaModule):
         return [('weight', self.weight), ('bias', self.bias)]
 
 
-# 转置卷积层:继承自MetaModule类，并重写了前向传播方法。
 class MetaConvTranspose2d(MetaModule):
     def __init__(self, *args, **kwargs):
         super().__init__()
@@ -178,7 +167,6 @@ class MetaConvTranspose2d(MetaModule):
         return [('weight', self.weight), ('bias', self.bias)]
 
 
-# 批归一化层:继承自MetaModule类，并重写了前向传播方法。
 class MetaBatchNorm2d(MetaModule):
     def __init__(self, *args, **kwargs):
         super().__init__()
@@ -218,7 +206,6 @@ class LambdaLayer(MetaModule):
         return self.lambd(x)
 
 
-# BasicBlock类，它是ResNet中的基本块。它继承自MetaModule类，并重写了前向传播方法。
 class BasicBlock(MetaModule):
     expansion = 1
 
@@ -249,11 +236,7 @@ class BasicBlock(MetaModule):
         return out
 
 
-# for metamodel
-# 定义了ResNet32类，它是一个完整的ResNet模型。
-# 它继承自MetaModule类，并定义了ResNet的整体结构和前向传播方法。
 class ResNet32_meta(MetaModule):
-    # _first_init_done = False
 
     def __init__(self, num_classes, block=BasicBlock, num_blocks=[5, 5, 5]):
         super(ResNet32_meta, self).__init__()
