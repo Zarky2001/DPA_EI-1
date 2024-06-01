@@ -10,7 +10,6 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 import torchvision.transforms as transforms
 from data_utils import *
-# import resnet
 from dataloader import load_data_distributed
 import shutil
 from ResNet import *
@@ -24,10 +23,7 @@ import time
 from ImageNet_iNat.ResNet import create_model
 from ImageNet_iNat.data_utils import build_dataset
 from ImageNet_iNat.resnet_meta import FCMeta, FCModel
-# from tensorboardX import SummaryWriter
 
-# tensorboard address
-# tensorboard --logdir  /home/zy/pycharm/project/MetaSAug-main/ImageNet_iNat/logger/Accuracyimage
 
 parser = argparse.ArgumentParser(description='Imbalanced Example')
 parser.add_argument('--dataset', default='iNaturalist18', type=str,
@@ -62,13 +58,9 @@ parser.add_argument('--local_rank', default=0, type=int)
 parser.add_argument('--meta_lr', default=0.1, type=float)
 
 args = parser.parse_args()
-# print(args)
 for arg in vars(args):
     print("{}={}".format(arg, getattr(args, arg)))
 
-# logdir = '/home/zy/pycharm/project/MetaSAug-main/ImageNet_iNat/logger/Accuracyimage/test6_runB'
-# writerTensor = SummaryWriter(logdir)
-# title = f'Validate/Accuracy/test'
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 
@@ -81,8 +73,6 @@ torch.manual_seed(args.seed)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-
-######### ImageNet dataset
 splits = ["train", "val", "test"]
 if args.dataset == 'ImageNet_LT':
     train_set = load_data_distributed(data_root=args.data_root, dataset=args.dataset, phase="train",
@@ -105,9 +95,7 @@ else:
                                     num_workers=args.workers, test_open=False, shuffle=False)
     meta_set = train_set
 
-if args.dataset == 'iNaturalist17':
-    meta_set, _ = build_dataset(meta_set, 5, args.num_classes)
-elif args.dataset == 'iNaturalist18':
+if args.dataset == 'iNaturalist18':
     meta_set, _ = build_dataset(meta_set, 2, args.num_classes)
 else:
     meta_set, _ = build_dataset(meta_set, 10, args.num_classes)
@@ -204,10 +192,9 @@ def train_mixup(train_loader, model, feature_extractor, optimizer_a, epoch, crit
         cls_loss.backward()
         optimizer_a.step()
 
-        # Calculate accuracy
         prec_train = accuracy(output.data, target_var.data, topk=(1,))[0]
 
-        # Print training information
+
         if i % args.print_freq == 0:
             print('Epoch: [{0}][{1}/{2}]\t'
                   'Mixup Loss: {loss:.4f}\t'
@@ -328,7 +315,7 @@ def validate(val_loader, model, feature_extractor, criterion, epoch):
                 top1=top1))
 
     print(' * Prec@1 {top1.avg:.3f}'.format(top1=top1))
-    # writerTensor.add_scalar(title, top1.avg, epoch)
+
     return top1.avg, preds, true_labels
 
 

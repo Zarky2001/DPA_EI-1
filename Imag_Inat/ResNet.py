@@ -1,6 +1,4 @@
 from resnet_meta import *
-from utils import *
-from os import path
 
 from ImageNet_iNat.resnet_meta import BottleneckMeta, FeatureMeta, FCMeta
 from ImageNet_iNat.utils import init_weights
@@ -18,10 +16,7 @@ def create_model(use_selfatt=False, use_fc=False, dropout=None, stage1_weights=F
             assert dataset
             print('Loading %s Stage 1 ResNet 10 Weights.' % dataset)
             if log_dir is not None:
-                # subdir = log_dir.strip('/').split('/')[-1]
-                # subdir = subdir.replace('stage2', 'stage1')
-                # weight_dir = path.join('/'.join(log_dir.split('/')[:-1]), subdir)
-                #weight_dir = path.join('/'.join(log_dir.split('/')[:-1]), 'stage1')
+
                 weight_dir = log_dir
             else:
                 weight_dir = './logs/%s/stage1' % dataset
@@ -31,7 +26,6 @@ def create_model(use_selfatt=False, use_fc=False, dropout=None, stage1_weights=F
                                         weights_path=weight_dir)
             else:
                 resnet50 = init_weights(model=resnet50, weights_path=weight_dir, classifier=True)
-            #resnet50.load_state_dict(torch.load(weight_dir))
         else:
             print('No Pretrained Weights For Feature Model.')
 

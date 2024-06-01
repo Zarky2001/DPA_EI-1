@@ -43,11 +43,9 @@ parser.add_argument('--gpu', default=None, type=int)
 parser.add_argument('--lam', default=0.75, type=float)
 parser.add_argument('--local_rank', default=0, type=int)
 parser.add_argument('--meta_lr', default=0.1, type=float)
-# parser.add_argument('--loading_path', default=None, type=str)
 parser.add_argument('--loading_path', default="", type=str)
 
 args = parser.parse_args()
-# print(args)
 for arg in vars(args):
     print("{}={}".format(arg, getattr(args, arg)))
 
@@ -127,7 +125,7 @@ def validate(val_loader, model, feature_extractor, criterion):
     for i, (input, target) in enumerate(val_loader):
         input = input.cuda(non_blocking=True)
         target = target.cuda(non_blocking=True)
-        # compute output
+
         with torch.no_grad():
             feature = feature_extractor(input)
             output = model(feature)
@@ -140,7 +138,6 @@ def validate(val_loader, model, feature_extractor, criterion):
         preds += preds_output
 
 
-        # measure accuracy and record loss
         prec1 = accuracy(output.data, target, topk=(1,))[0]
         losses.update(loss.data.item(), input.size(0))
         top1.update(prec1.item(), input.size(0))
@@ -158,8 +155,6 @@ def validate(val_loader, model, feature_extractor, criterion):
                 top1=top1))
 
     print(' * Prec@1 {top1.avg:.3f}'.format(top1=top1))
-    # log to TensorBoard
-    # import pdb; pdb.set_trace()
 
     return top1.avg, preds, true_labels
 

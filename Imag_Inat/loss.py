@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*
 
-import numpy as np
 import torch
 import torch.nn as nn
-from torch.autograd import Variable
-import math
 import torch.nn.functional as F
-import pdb
 
 def MI(outputs_target):
     batch_size = outputs_target.size(0)
@@ -55,7 +51,6 @@ class EstimatorMean():
         self.Ave = (self.Ave.mul(1 - weight_AV) + ave_CxA.mul(weight_AV)).detach()
         self.Amount += onehot.sum(0)
 
-# the estimation of covariance matrix
 class EstimatorCV():
     def __init__(self, feature_num, class_num):
         super(EstimatorCV, self).__init__()
@@ -70,7 +65,6 @@ class EstimatorCV():
         A = features.size(1)
 
         NxCxFeatures = features.view(N, 1, A).expand(N, C, A)
-        # onehot = torch.zeros(N, C).cuda()
         onehot = torch.zeros(N, C).cuda()
         onehot.scatter_(1, labels.view(-1, 1), 1)
 
@@ -85,15 +79,12 @@ class EstimatorCV():
 
         var_temp = features_by_sort - ave_CxA.expand(N, C, A).mul(NxCxA_onehot)
 
-        # var_temp = torch.bmm(var_temp.permute(1, 2, 0), var_temp.permute(1, 0, 2)).div(Amount_CxA.view(C, A, 1).expand(C, A, A))
         var_temp = torch.mul(var_temp.permute(1, 2, 0), var_temp.permute(1, 2, 0)).sum(2).div(Amount_CxA.view(C, A))
 
-        # sum_weight_CV = onehot.sum(0).view(C, 1, 1).expand(C, A, A)
         sum_weight_CV = onehot.sum(0).view(C, 1).expand(C, A)
 
         sum_weight_AV = onehot.sum(0).view(C, 1).expand(C, A)
 
-        # weight_CV = sum_weight_CV.div(sum_weight_CV + self.Amount.view(C, 1, 1).expand(C, A, A))
         weight_CV = sum_weight_CV.div(sum_weight_CV + self.Amount.view(C, 1).expand(C, A))
         weight_CV[weight_CV != weight_CV] = 0
 
@@ -106,7 +97,6 @@ class EstimatorCV():
                 (self.Ave - ave_CxA).view(C, A)
             )
         )
-        # (self.Ave - ave_CxA).pow(2)
 
         self.CoVariance = (self.CoVariance.mul(1 - weight_CV) + var_temp.mul(
             weight_CV)).detach() + additional_CV.detach()

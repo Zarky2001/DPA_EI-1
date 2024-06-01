@@ -1,12 +1,9 @@
-import numpy as np
-import torchvision
-from torch.utils.data import Dataset, DataLoader, ConcatDataset
+from torch.utils.data import Dataset
 from torchvision import transforms
 import os
 from PIL import Image
 import json
 
-# Image statistics
 RGB_statistics = {
     'iNaturalist18': {
         'mean': [0.466, 0.471, 0.380],
@@ -123,25 +120,12 @@ class LT_Dataset_iNat17(Dataset):
 
 def load_data_distributed(data_root, dataset, phase, batch_size, sampler_dic=None, num_workers=4, test_open=False, shuffle=True):
 
-    # if phase == 'train_plain':
-    #     txt_split = 'train'
-    # elif phase == 'train_val':
-    #     txt_split = 'val'
-    #     phase = 'train'
-    # else:
-    #     txt_split = phase
-    if dataset == "iNaturalist17":
-        txt = 'data/%s_%s.json' % (dataset, phase)
-    else:
-        txt = 'data/%s_%s.txt' % (dataset, phase)
+    txt = 'data/%s_%s.txt' % (dataset, phase)
 
     print('Loading data from %s' % txt)
 
     if dataset == 'iNaturalist18':
         print('===> Loading iNaturalist18 statistics')
-        key = 'iNaturalist18'
-    elif dataset == 'iNaturalist17':
-        print('===> Loading iNaturalist17 statistics')
         key = 'iNaturalist18'
     else:
         key = 'default'
@@ -155,10 +139,7 @@ def load_data_distributed(data_root, dataset, phase, batch_size, sampler_dic=Non
 
     print('Use data transformation:', transform)
 
-    if dataset == "iNaturalist17":
-        set_ = LT_Dataset_iNat17(data_root, txt, transform)
-    else:
-        set_ = LT_Dataset(data_root, txt, transform)
+    set_ = LT_Dataset(data_root, txt, transform)
     
 
     return set_

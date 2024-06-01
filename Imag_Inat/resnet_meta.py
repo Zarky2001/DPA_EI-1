@@ -13,7 +13,6 @@ def to_var(x, requires_grad=True):
 
 
 class MetaModule(nn.Module):
-    # adopted from: Adrien Ecoffet https://github.com/AdrienLE
     def params(self):
         for name, param in self.named_params(self):
             yield param
@@ -48,9 +47,6 @@ class MetaModule(nn.Module):
         if source_params is not None:
             for tgt, src in zip(self.named_params(self), source_params):
                 name_t, param_t = tgt
-                # name_s, param_s = src
-                # grad = param_s.grad
-                # name_s, param_s = src
                 grad = src
                 if first_order:
                     grad = to_var(grad.detach().data)
@@ -66,7 +62,7 @@ class MetaModule(nn.Module):
                     tmp = param - lr_inner * grad
                     self.set_param(self, name, tmp)
                 else:
-                    param = param.detach_()  # https://blog.csdn.net/qq_39709535/article/details/81866686
+                    param = param.detach_()
                     self.set_param(self, name, param)
 
     def set_param(self, curr_mod, name, param):
@@ -106,7 +102,6 @@ class MetaLinear(MetaModule):
     def named_leaves(self):
         return [('weight', self.weight), ('bias', self.bias)]
 
-# This layer will be used when the loss function is LDAM
 class MetaLinear_Norm(MetaModule):
     def __init__(self, *args, **kwargs):
         super().__init__()
@@ -115,12 +110,10 @@ class MetaLinear_Norm(MetaModule):
         temp.weight.data.uniform_(-1, 1).renorm_(2, 1, 1e-5).mul_(1e5)
         self.register_buffer('weight', to_var(temp.weight.data.t(), requires_grad=True))
         self.weight.data.uniform_(-1, 1).renorm_(2, 1, 1e-5).mul_(1e5)
-        #self.register_buffer('bias', to_var(ignore.bias.data, requires_grad=True))
 
     def forward(self, x):
         out = F.normalize(x, dim=1).mm(F.normalize(self.weight, dim=0))
         return out
-        # return F.linear(x, self.weight, self.bias)
 
     def named_leaves(self):
         return [('weight', self.weight)]#, ('bias', self.bias)]
@@ -225,9 +218,9 @@ class MetaBatchNorm1d(MetaModule):
 
         if self.training and self.track_running_stats:
             self.num_batches_tracked += 1
-            if self.momentum is None:  # use cumulative moving average
+            if self.momentum is None:
                 exponential_average_factor = 1.0 / self.num_batches_tracked.item()
-            else:  # use exponential moving average
+            else:
                 exponential_average_factor = self.momentum
 
         return F.batch_norm(x, self.running_mean, self.running_var, self.weight, self.bias,
@@ -245,8 +238,6 @@ class MetaBatchNorm1d(MetaModule):
         version = metadata.get('version', None)
 
         if (version is None or version < 2) and self.track_running_stats:
-            # at version 2: added num_batches_tracked buffer
-            #               this should have a default value of 0
             num_batches_tracked_key = prefix + 'num_batches_tracked'
             if num_batches_tracked_key not in state_dict:
                 state_dict[num_batches_tracked_key] = torch.tensor(0, dtype=torch.long)
@@ -288,7 +279,6 @@ class MetaBatchNorm2d(MetaModule):
 
 def _weights_init(m):
     classname = m.__class__.__name__
-    # print(classname)
     if isinstance(m, MetaLinear) or isinstance(m, MetaConv2d):
         init.kaiming_normal(m.weight)
 
@@ -410,20 +400,14 @@ class FeatureMeta(MetaModule):
         self.bn1 = MetaBatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        # self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.layer1 = self._make_layer(block, 64, num_blocks[0], stride=1)
         self.layer2 = self._make_layer(block, 128, num_blocks[1], stride=2)
         self.layer3 = self._make_layer(block, 256, num_blocks[2], stride=2)
         self.layer4 = self._make_layer(block, 512, num_blocks[3], stride=2)
-        # self.avgpool = nn.AvgPool2d(7, stride=1)
         self.avgpool = nn.AvgPool2d(7, stride=1)
 
         self.use_fc = use_fc
         self.use_dropout = True if dropout else False
-
-        #if self.use_fc:
-            #print('Using fc.')
-            #self.fc = MetaLinear(512*block.expansion, 8142)
 
         if self.use_dropout:
             print('Using dropout')
@@ -468,9 +452,6 @@ class FeatureMeta(MetaModule):
 
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
-
-        #if self.use_fc:
-            #y = F.relu(self.fc(x))
 
         if self.use_dropout:
             x = self.dropout(x)
